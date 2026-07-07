@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Type play</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Rough Feeling Graphics - High-Res Pro Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        :root {
+            --bg-page: #f2f2f2;        
+            --bg-card: #ffffff;
+            --border-color: #e0ddd5;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        /* 锁定显示：初始隐藏，待准备就绪后整体显示 */
+        body {
+            margin: 0; background-color: var(--bg-page);
+            font-family: var(--font-sans); display: flex;
+            justify-content: center; align-items: center;     
+            min-height: 100vh; color: #000; overflow: hidden;
+            visibility: hidden; 
+        }
+        .container {
+            display: flex; width: 1280px; max-width: 98vw;
+            height: 940px; gap: 60px; align-items: center; justify-content: center;
+        }
+        #canvas-container { flex: 0 0 700px; height: 933px; display: flex; align-items: center; justify-content: center; position: relative; }
+        canvas { background-color: #fff; box-shadow: none; cursor: default; }
+        .sidebar { flex: 0 0 320px; display: flex; flex-direction: column; gap: 15px; height: 933px; }
+        .box { background: var(--bg-card); border: none; padding: 24px 20px; overflow-y: auto; flex-grow: 1; }
+        .label { font-size: 11px; font-weight: 700; margin-bottom: 12px; display: block; letter-spacing: 0.8px; text-transform: uppercase; color: #444; }
+        .section-divider { margin-top: 25px; }
+        .nav-link { font-size: 22px; color: #000; text-decoration: none; margin-bottom: 10px; display: inline-block; font-weight: 800; line-height: 1.1; text-transform: none; letter-spacing: -0.2px; }
+        .color-group { display: flex; flex-direction: row; justify-content: space-between; margin-top: 5px; }
+        .color-item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+        .color-item span { font-size: 10px; font-weight: 600; }
+        .color-row { display: flex; align-items: center; gap: 4px; }
+        .preset-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+        .custom-picker-wrap { position: relative; width: 14px; height: 14px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+        #brush-picker-ui { background: #000000; }
+        #bg-picker-ui { background: #f0e7e0; } 
+        input[type="color"].custom-picker { position: absolute; top: -5px; left: -5px; width: 24px; height: 24px; cursor: pointer; border: none; padding: 0; background: transparent; opacity: 0; }
+        .bg-upload-container { margin-top: 15px; width: 100%; }
+        .upload-box { width: 100%; height: 38px; padding: 0 10px; border: none; background: var(--bg-page); font-family: var(--font-sans); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; text-align: center; text-transform: uppercase; position: relative; overflow: hidden; }
+        .filename-wrap { display: none; width: 100%; justify-content: center; align-items: center; gap: 8px; height: 100%; }
+        .filename-text { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #333; line-height: 1; }
+        .btn-cancel-x { color: #bbb; font-size: 18px; font-weight: 200; cursor: pointer; line-height: 1; transition: color 0.2s; }
+        .btn-cancel-x:hover { color: #555; }
+        .slider-wrap { margin-bottom: 18px; } 
+        .slider-info { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 6px; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 1px; background: #000; outline: none; margin: 12px 0; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #fff; border: 1.5px solid #000; border-radius: 50%; cursor: pointer; }
+        .btn-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+        .btn-ui { padding: 9px 1px; border: 1px solid var(--border-color); background: #fff; font-family: var(--font-sans); font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
+        .btn-ui.active { background: #000; color: #fff; }
+        .btn-black { background: #000; color: #fff; border: none; }
+        .footer-action-wrap { margin-top: 5px; display: flex; gap: 8px; }
+        .btn-undo, .btn-clear { flex: 1; padding: 12px 5px; background: #808080; border: none; color: #fff; font-family: var(--font-sans); font-size: 11px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
+        .btn-undo:active, .btn-clear:active { background: #000; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="canvas-container"></div>
+    <div class="sidebar">
+        <div class="nav-link">Rough Feeling Graphics<br>Drawing Tool</div>
+        <div class="box">
+            <span class="label">COLOR SETTINGS 颜色设置</span>
+            <div class="color-group">
+                <div class="color-item">
+                    <span>BRUSH 画笔</span>
+                    <div class="color-row">
+                        <div class="preset-dot" style="background:#000000" onclick="quickSetBrush('#000000')"></div>
+                        <div class="preset-dot" style="background:#00c3ff" onclick="quickSetBrush('#00c3ff')"></div>
+                        <div class="preset-dot" style="background:#ff4d00" onclick="quickSetBrush('#ff4d00')"></div>
+                        <div class="preset-dot" style="background:#ffb2c1" onclick="quickSetBrush('#ffb2c1')"></div>
+                        <div class="preset-dot" style="background:#ffd000" onclick="quickSetBrush('#ffd000')"></div>
+                        <div class="custom-picker-wrap" id="brush-picker-ui"><input type="color" class="custom-picker" id="pick-brush" value="#000000" oninput="quickSetBrush(this.value)"></div>
+                    </div>
+                </div>
+                <div class="color-item">
+                    <span>CANVAS 画布</span>
+                    <div class="color-row">
+                        <div class="preset-dot" style="background:#f0e7e0" onclick="quickSetBg('#f0e7e0')"></div>
+                        <div class="preset-dot" style="background:#d8d3c7" onclick="quickSetBg('#d8d3c7')"></div>
+                        <div class="preset-dot" style="background:#c5c9c7" onclick="quickSetBg('#c5c9c7')"></div>
+                        <div class="preset-dot" style="background:#c9b9b5" onclick="quickSetBg('#c9b9b5')"></div>
+                        <div class="preset-dot" style="background:#f2d5d5" onclick="quickSetBg('#f2d5d5')"></div>
+                        <div class="custom-picker-wrap" id="bg-picker-ui"><input type="color" class="custom-picker" id="pick-bg" value="#f0e7e0" oninput="quickSetBg(this.value)"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-upload-container">
+                <div class="upload-box" id="upload-box-ui" onclick="handleUploadClick()">
+                    <span id="upload-prompt">上传背景图片</span>
+                    <div class="filename-wrap" id="filename-wrap">
+                        <span class="filename-text" id="filename-text"></span>
+                        <span class="btn-cancel-x" onclick="removeBgImage(event)">×</span>
+                    </div>
+                </div>
+                <input type="file" id="inp-bg-image" hidden accept="image/*">
+                <div id="bg-opacity-wrap" class="slider-wrap" style="display: none; margin-top: 12px;">
+                    <div class="slider-info"><span>BG OPACITY 透明度</span><span id="val-bg-opacity">50%</span></div>
+                    <input type="range" id="inp-bg-opacity" min="0" max="100" value="50">
+                </div>
+            </div>
+            <span class="label section-divider">Brush Style 笔触模式</span>
+            <div class="btn-group">
+                <button id="mode-ribbon" class="btn-ui active" onclick="setMode('ribbon')">马克</button>
+                <button id="mode-vibe" class="btn-ui" onclick="setMode('vibe')">抖动</button>
+                <button id="mode-organic" class="btn-ui" onclick="setMode('organic')">有机</button>
+                <button id="mode-flat" class="btn-ui" onclick="setMode('flat')">哥特</button>
+                <button id="mode-marker" class="btn-ui" onclick="setMode('marker')">平笔</button>
+                <button id="mode-ink" class="btn-ui" onclick="setMode('ink')">墨韵</button>
+                <button id="mode-blocky" class="btn-ui" onclick="setMode('blocky')">方块</button>
+                <button id="mode-beads" class="btn-ui" onclick="setMode('beads')">圆珠</button>
+                <button id="mode-weave" class="btn-ui" onclick="setMode('weave')">枯笔</button>
+                <button id="mode-pixel" class="btn-ui" onclick="setMode('pixel')">像素</button>
+                <button id="mode-rail" class="btn-ui" onclick="setMode('rail')">双轨</button>
+                <button id="mode-checker" class="btn-ui" onclick="setMode('checker')">棋盘</button>
+            </div>
+            <div class="slider-wrap section-divider">
+                <div class="slider-info"><span>BRUSH SIZE 画笔大小</span><span id="val-weight">12px</span></div>
+                <input type="range" id="weight" min="1" max="150" value="12" step="1">
+            </div>
+            <div id="rough-wrap" class="slider-wrap">
+                <div class="slider-info"><span>GAP RATIO 缝隙比例</span><span id="val-rough">50%</span></div>
+                <input type="range" id="roughness" min="5" max="95" value="50" step="1">
+            </div>
+            <span class="label section-divider">Export 保存文件</span>
+            <div class="btn-group">
+                <button class="btn-ui btn-black" onclick="exportHighRes('jpg')">JPG</button>
+                <button class="btn-ui btn-black" onclick="exportHighRes('png')">PNG</button>
+                <button class="btn-ui btn-black" onclick="exportSVG()">SVG</button>
+            </div>
+        </div>
+        <div class="footer-action-wrap">
+            <button class="btn-undo" onclick="undo()">返回上步</button>
+            <button class="btn-clear" onclick="clearCanvas()">清空画布</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let paths = []; 
+    let currentPath = [];
+    let currentSeed = 0; 
+    let brushMode = 'ribbon';
+    let bColor = '#000000'; 
+    let bgColor = '#f0e7e0';
+    let bgImage = null; 
+    let bgOpacity = 0.5;
+    let strokeLayer, bgLayer;
+
+    function undo() { if (paths.length > 0) paths.pop(); }
+
+    function setup() {
+        let cnv = createCanvas(700, 933); 
+        cnv.parent('canvas-container');
+        strokeLayer = createGraphics(700, 933);
+        bgLayer = createGraphics(700, 933);
+        updateBackground();
+
+        document.getElementById('weight').oninput = function() { document.getElementById('val-weight').innerText = this.value + 'px'; };
+        document.getElementById('roughness').oninput = function() { document.getElementById('val-rough').innerText = this.value + '%'; };
+        document.getElementById('inp-bg-image').addEventListener('change', handleBgFile);
+        document.getElementById('inp-bg-opacity').oninput = function() {
+            bgOpacity = this.value / 100; 
+            document.getElementById('val-bg-opacity').innerText = this.value + '%';
+            updateBackground(); 
+        };
+        window.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { undo(); e.preventDefault(); } });
+        
+        // 锁定：在一切就绪后，整体显示工具
+        document.body.style.visibility = 'visible';
+    }
+
+    // 性能核心：使用底层 Canvas API 绘制，实现零延迟
+    function updateBackground() {
+        let ctx = bgLayer.drawingContext;
+        bgLayer.clear();
+        bgLayer.background(bgColor);
+        if (bgImage) {
+            ctx.save();
+            ctx.globalAlpha = bgOpacity;
+            let imgW = bgImage.width;
+            let imgH = bgImage.height;
+            let canvasW = bgLayer.width;
+            let canvasH = bgLayer.height;
+            let imgRatio = imgW / imgH;
+            let targetRatio = canvasW / canvasH;
+            let dw, dh;
+            if (imgRatio > targetRatio) {
+                dw = canvasW; dh = canvasW / imgRatio;
+            } else {
+                dh = canvasH; dw = canvasH * imgRatio;
+            }
+            // 使用原生 drawImage 提升解码渲染速度
+            ctx.drawImage(bgImage, (canvasW - dw) / 2, (canvasH - dh) / 2, dw, dh);
+            ctx.restore();
+        }
+    }
+
+    function draw() {
+        image(bgLayer, 0, 0);
+        strokeLayer.clear();
+        for (let pathObj of paths) drawStyledPath(pathObj, strokeLayer);
+        if (mouseIsPressed && mouseButton === LEFT) {
+            let isInside = (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height);
+            if (isInside || currentPath.length > 0) {
+                currentPath.push({ x: mouseX, y: mouseY });
+                drawStyledPath({
+                    points: currentPath, mode: brushMode, weight: parseFloat(document.getElementById('weight').value),
+                    rough: parseFloat(document.getElementById('roughness').value) / 100, seed: currentSeed, color: bColor
+                }, strokeLayer);
+            }
+        }
+        image(strokeLayer, 0, 0);
+    }
+
+    function quickSetBrush(hex) { bColor = hex; document.getElementById('brush-picker-ui').style.background = hex; document.getElementById('pick-brush').value = hex; }
+    function quickSetBg(hex) { bgColor = hex; document.getElementById('bg-picker-ui').style.background = hex; document.getElementById('pick-bg').value = hex; updateBackground(); }
+    function handleUploadClick() { if (!bgImage) document.getElementById('inp-bg-image').click(); }
+
+    // 核心修改：使用原生解码和 ObjectURL 极速加载
+    function handleBgFile(e) {
+        let file = e.target.files[0]; if (!file) return;
+        
+        document.getElementById('filename-text').innerText = file.name;
+        document.getElementById('upload-prompt').style.display = 'none';
+        document.getElementById('filename-wrap').style.display = 'flex';
+        document.getElementById('bg-opacity-wrap').style.display = 'block';
+        
+        let url = URL.createObjectURL(file);
+        let img = new Image();
+        img.onload = function() {
+            bgImage = img; // 直接保存原生 Image 对象
+            updateBackground();
+            URL.revokeObjectURL(url);
+        };
+        img.src = url; // 触发原生异步加载
+    }
+
+    function removeBgImage(e) {
+        if(e) e.stopPropagation(); bgImage = null; document.getElementById('inp-bg-image').value = '';
+        document.getElementById('upload-prompt').style.display = 'block'; document.getElementById('filename-wrap').style.display = 'none'; document.getElementById('bg-opacity-wrap').style.display = 'none';
+        updateBackground();
+    }
+
+    function mousePressed() { if(mouseButton === LEFT && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) currentSeed = Math.floor(Math.random() * 1000000); }
+    function mouseReleased() {
+        if (mouseButton === LEFT && currentPath.length > 0) {
+            paths.push({
+                points: [...currentPath], mode: brushMode, weight: parseFloat(document.getElementById('weight').value),
+                rough: parseFloat(document.getElementById('roughness').value) / 100, seed: currentSeed, color: bColor
+            });
+            currentPath = [];
+        }
+    }
+
+    function drawStyledPath(pathObj, target) {
+        if (pathObj.points.length < 2) return;
+        target.push(); target.randomSeed(pathObj.seed); target.noiseSeed(pathObj.seed);
+        target.stroke(pathObj.color); target.fill(pathObj.color);
+        let bSize = pathObj.weight, bRough = pathObj.rough;
+        
+        if (pathObj.mode === 'checker') {
+            target.noStroke(); let g = bSize; let r = bSize * 0.7; let pSet = new Set();
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i], d = target.dist(p1.x, p1.y, p2.x, p2.y);
+                if(d === 0) continue;
+                for(let j=0; j<=d; j+=2){ 
+                    let curX = target.lerp(p1.x, p2.x, j/d), curY = target.lerp(p1.y, p2.y, j/d);
+                    for(let ox = -r; ox <= r; ox += g){
+                        for(let oy = -r; oy <= r; oy += g){
+                            let gx = Math.floor((curX + ox)/g), gy = Math.floor((curY + oy)/g);
+                            if((gx + gy) % 2 === 0) { 
+                                let key = `${gx},${gy}`;
+                                if (!pSet.has(key)) { target.rect(gx*g, gy*g, g, g); pSet.add(key); }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (pathObj.mode === 'organic' || pathObj.mode === 'ribbon' || pathObj.mode === 'marker') {
+            target.noFill(); let cap = (pathObj.mode === 'marker') ? target.SQUARE : target.ROUND;
+            target.strokeCap(cap); target.strokeJoin(target.ROUND);
+            target.strokeWeight(bSize); target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+        } else if (pathObj.mode === 'rail') {
+            target.noFill(); target.strokeJoin(target.ROUND); target.strokeCap(target.PROJECT);
+            target.stroke(pathObj.color); target.strokeWeight(bSize); 
+            target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+            target.stroke(bgColor); target.strokeWeight(bSize * bRough); 
+            target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+        } else if (pathObj.mode === 'vibe') {
+            target.noFill(); target.strokeCap(target.ROUND);
+            for (let i = 1; i < pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i];
+                target.strokeWeight(bSize * (1 + (target.random() - 0.5) * bRough * 0.4));
+                target.line(p1.x, p1.y, p2.x + (target.random()-0.5)*10*bRough, p2.y + (target.random()-0.5)*10*bRough);
+            }
+        } else if (pathObj.mode === 'flat') {
+            target.noStroke(); let ang = target.PI/4, dx = target.cos(ang)*(bSize/2), dy = target.sin(ang)*(bSize/2);
+            for (let i = 1; i < pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i];
+                target.beginShape(); target.vertex(p1.x-dx, p1.y+dy); target.vertex(p1.x+dx, p1.y-dy); target.vertex(p2.x+dx, p2.y-dy); target.vertex(p2.x-dx, p2.y+dy); target.endShape(target.CLOSE);
+            }
+        } else if (pathObj.mode === 'beads' || pathObj.mode === 'blocky') {
+            target.noStroke(); let spacing = bSize*(0.1+bRough*2.9), lastD = pathObj.points[0];
+            pathObj.mode === 'beads' ? target.circle(lastD.x, lastD.y, bSize) : target.rect(lastD.x-bSize/2, lastD.y-bSize/2, bSize, bSize);
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p = pathObj.points[i]; if (target.dist(lastD.x, lastD.y, p.x, p.y) > spacing) {
+                    pathObj.mode === 'beads' ? target.circle(p.x, p.y, bSize) : target.rect(p.x-bSize/2, p.y-bSize/2, bSize, bSize); lastD = p;
+                }
+            }
+        } else if (pathObj.mode === 'pixel') {
+            target.noStroke(); let g = bSize, pSet = new Set();
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i], d = target.dist(p1.x, p1.y, p2.x, p2.y);
+                if(d === 0) continue;
+                for(let j=0; j<=d; j+=g/2){
+                    let x = target.lerp(p1.x, p2.x, j/d), y = target.lerp(p1.y, p2.y, j/d);
+                    let gx = Math.floor(x/g), gy = Math.floor(y/g), key = `${gx},${gy}`;
+                    if (!pSet.has(key)) { target.rect(gx*g, gy*g, g, g); pSet.add(key); }
+                }
+            }
+        } else if (pathObj.mode === 'ink') {
+            target.noFill(); target.strokeCap(target.ROUND); let lW = bSize;
+            for (let i=1; i<pathObj.points.length; i++) {
+                let d = target.dist(pathObj.points[i-1].x, pathObj.points[i-1].y, pathObj.points[i].x, pathObj.points[i].y);
+                lW = target.lerp(lW, target.max(bSize*0.2, bSize-(d*0.8)), 0.4); target.strokeWeight(lW);
+                target.line(pathObj.points[i-1].x, pathObj.points[i-1].y, pathObj.points[i].x, pathObj.points[i].y);
+            }
+        } else if (pathObj.mode === 'weave') {
+            target.noStroke(); let wD = 0, step = bSize*0.35;
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i], dx = p2.x-p1.x, dy = p2.y-p1.y, d = target.sqrt(dx*dx+dy*dy);
+                if (d>2) {
+                    let angle = target.atan2(dy, dx);
+                    for (let j=0; j<d; j+=2) {
+                        let is3 = Math.floor(wD/step)%2===0; target.push(); target.translate(p1.x+dx*(j/d), p1.y+dy*(j/d)); target.rotate(angle);
+                        let w = bSize/5, h = bSize*0.42;
+                        if (is3) { target.rect(-bSize/2, -h/2, w, h); target.rect(-w/2, -h/2, w, h); target.rect(bSize/2-w, -h/2, w, h); }
+                        else { target.rect(-bSize/2+w, -h/2, w, h); target.rect(bSize/2-w*2, -h/2, w, h); }
+                        target.pop(); wD += 2;
+                    }
+                }
+            }
+        }
+        target.pop();
+    }
+
+    function drawBgToTarget(target) {
+        let ctx = target.drawingContext;
+        target.background(bgColor);
+        if (bgImage) {
+            ctx.save(); ctx.globalAlpha = bgOpacity;
+            let imgW = bgImage.width, imgH = bgImage.height, canvasW = target.width, canvasH = target.height;
+            let imgRatio = imgW / imgH, targetRatio = canvasW / canvasH, dw, dh;
+            if (imgRatio > targetRatio) { dw = canvasW; dh = canvasW / imgRatio; }
+            else { dh = canvasH; dw = canvasH * imgRatio; }
+            ctx.drawImage(bgImage, (canvasW - dw) / 2, (canvasH - dh) / 2, dw, dh); ctx.restore();
+        }
+    }
+
+    function exportHighRes(format) {
+        let exportW = 3508, scaleFact = exportW / width; 
+        let pg = createGraphics(exportW, height * scaleFact);
+        let pgStrokes = createGraphics(exportW, height * scaleFact);
+        if (format !== 'png') { drawBgToTarget(pg); } else { pg.clear(); }
+        pgStrokes.scale(scaleFact); 
+        for (let p of paths) drawStyledPath(p, pgStrokes);
+        pg.image(pgStrokes, 0, 0);
+        save(pg, `artwork_${Date.now()}.${format}`); pg.remove(); pgStrokes.remove();
+    }
+
+    function exportSVG() {
+        let svgContent = "";
+        paths.forEach((pObj) => {
+            if (pObj.points.length < 2) return;
+            randomSeed(pObj.seed); noiseSeed(pObj.seed);
+            const color = pObj.color, bSize = pObj.weight, bRough = pObj.rough;
+            if (pObj.mode === 'checker') {
+                let g = bSize, r = bSize * 0.7, pSet = new Set(), rects = "";
+                for (let i=1; i<pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], dV = dist(p1.x, p1.y, p2.x, p2.y);
+                    if (dV === 0) continue;
+                    for(let j=0; j<=dV; j+=2){ 
+                        let curX = lerp(p1.x, p2.x, j/dV), curY = lerp(p1.y, p2.y, j/dV);
+                        for(let ox = -r; ox <= r; ox += g){
+                            for(let oy = -r; oy <= r; oy += g){
+                                let gx = Math.floor((curX + ox)/g), gy = Math.floor((curY + oy)/g);
+                                if((gx + gy) % 2 === 0) {
+                                    let key = `${gx},${gy}`;
+                                    if (!pSet.has(key)) { rects += `<rect x="${(gx*g).toFixed(2)}" y="${(gy*g).toFixed(2)}" width="${g.toFixed(2)}" height="${g.toFixed(2)}" fill="${color}" />`; pSet.add(key); }
+                                }
+                            }
+                        }
+                    }
+                }
+                svgContent += `<g>${rects}</g>`;
+            } else if (pObj.mode === 'rail') {
+                let d = `M${pObj.points[0].x.toFixed(2)},${pObj.points[0].y.toFixed(2)}`;
+                for(let i=1; i<pObj.points.length; i++) d += ` L${pObj.points[i].x.toFixed(2)},${pObj.points[i].y.toFixed(2)}`;
+                svgContent += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${bSize.toFixed(2)}" stroke-linecap="square" stroke-linejoin="round" />`;
+                svgContent += `<path d="${d}" fill="none" stroke="${bgColor}" stroke-width="${(bSize * bRough).toFixed(2)}" stroke-linecap="square" stroke-linejoin="round" />`;
+            } else if (['organic', 'ribbon', 'marker'].includes(pObj.mode)) {
+                let d = `M${pObj.points[0].x.toFixed(2)},${pObj.points[0].y.toFixed(2)}`;
+                for(let i=1; i<pObj.points.length; i++) d += ` L${pObj.points[i].x.toFixed(2)},${pObj.points[i].y.toFixed(2)}`;
+                let cap = (pObj.mode === 'marker') ? 'square' : 'round';
+                svgContent += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${bSize.toFixed(2)}" stroke-linecap="${cap}" stroke-linejoin="round" />`;
+            } else if (pObj.mode === 'vibe') {
+                let vd = ""; for (let i = 1; i < pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], sw = bSize * (1 + (random() - 0.5) * bRough * 0.4);
+                    vd += `<line x1="${p1.x.toFixed(2)}" y1="${p1.y.toFixed(2)}" x2="${(p2.x + (random()-0.5)*10*bRough).toFixed(2)}" y2="${(p2.y + (random()-0.5)*10*bRough).toFixed(2)}" stroke="${color}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" />`;
+                }
+                svgContent += `<g>${vd}</g>`;
+            } else if (pObj.mode === 'flat') {
+                let ang = PI/4, dx = cos(ang)*(bSize/2), dy = sin(ang)*(bSize/2), fd = "";
+                for (let i = 1; i < pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i];
+                    fd += `M${(p1.x-dx).toFixed(2)},${(p1.y+dy).toFixed(2)} L${(p1.x+dx).toFixed(2)},${(p1.y-dy).toFixed(2)} L${(p2.x+dx).toFixed(2)},${(p2.y-dy).toFixed(2)} L${(p2.x-dx).toFixed(2)},${(p2.y+dy).toFixed(2)} Z `;
+                }
+                svgContent += `<path d="${fd}" fill="${color}" />`;
+            } else if (pObj.mode === 'beads' || pObj.mode === 'blocky') {
+                let spacing = bSize*(0.1+bRough*2.9), lastD = pObj.points[0], shp = ""; 
+                const addS = (p) => {
+                    if (pObj.mode === 'beads') shp += `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(bSize/2).toFixed(2)}" fill="${color}" />`;
+                    else shp += `<rect x="${(p.x-bSize/2).toFixed(2)}" y="${(p.y-bSize/2).toFixed(2)}" width="${bSize.toFixed(2)}" height="${bSize.toFixed(2)}" fill="${color}" />`;
+                };
+                addS(lastD); for (let i=1; i<pObj.points.length; i++) { if (dist(lastD.x, lastD.y, pObj.points[i].x, pObj.points[i].y) > spacing) { addS(pObj.points[i]); lastD = pObj.points[i]; } }
+                svgContent += `<g>${shp}</g>`;
+            } else if (pObj.mode === 'pixel') {
+                let g = bSize, pSet = new Set(), rcts = "";
+                for (let i=1; i<pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], dV = dist(p1.x, p1.y, p2.x, p2.y);
+                    if (dV === 0) continue;
+                    for(let j=0; j<=dV; j+=g/2){
+                        let gx = Math.floor(lerp(p1.x, p2.x, j/dV)/g), gy = Math.floor(lerp(p1.y, p2.y, j/dV)/g);
+                        if (!pSet.has(`${gx},${gy}`)) { rcts += `<rect x="${(gx*g).toFixed(2)}" y="${(gy*g).toFixed(2)}" width="${g.toFixed(2)}" height="${g.toFixed(2)}" fill="${color}" />`; pSet.add(`${gx},${gy}`); }
+                    }
+                }
+                svgContent += `<g>${rcts}</g>`;
+            } else if (pObj.mode === 'ink') {
+                let lW = bSize, ln = ""; for (let i = 1; i < pObj.points.length; i++) {
+                    let dV = dist(pObj.points[i-1].x, pObj.points[i-1].y, pObj.points[i].x, pObj.points[i].y);
+                    lW = lerp(lW, max(bSize*0.2, bSize-(dV*0.8)), 0.4);
+                    ln += `<line x1="${pObj.points[i-1].x.toFixed(2)}" y1="${pObj.points[i-1].y.toFixed(2)}" x2="${pObj.points[i].x.toFixed(2)}" y2="${pObj.points[i].y.toFixed(2)}" stroke="${color}" stroke-width="${lW.toFixed(2)}" stroke-linecap="round" />`;
+                }
+                svgContent += `<g>${ln}</g>`;
+            } else if (pObj.mode === 'weave') {
+                let wD = 0, step = bSize*0.35, wv = ""; for (let i = 1; i < pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], dx = p2.x-p1.x, dy = p2.y-p1.y, distV = sqrt(dx*dx+dy*dy);
+                    if (distV>2) {
+                        let angle = (atan2(dy, dx) * 180 / PI).toFixed(2);
+                        for (let j=0; j<distV; j+=2) {
+                            let is3 = Math.floor(wD/step)%2===0, w = bSize/5, h = bSize*0.42, tx = (p1.x+dx*(j/distV)).toFixed(2), ty = (p1.y+dy*(j/distV)).toFixed(2);
+                            if(is3) { 
+                                wv += `<rect x="${(-bSize/2).toFixed(2)}" y="${(-h/2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}" transform="translate(${tx},${ty}) rotate(${angle})" />`; 
+                                wv += `<rect x="${(-w/2).toFixed(2)}" y="${(-h/2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}" transform="translate(${tx},${ty}) rotate(${angle})" />`; 
+                                wv += `<rect x="${(bSize/2-w).toFixed(2)}" y="${(-h/2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}" transform="translate(${tx},${ty}) rotate(${angle})" />`; 
+                            } else { 
+                                wv += `<rect x="${(-bSize/2+w).toFixed(2)}" y="${(-h/2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}" transform="translate(${tx},${ty}) rotate(${angle})" />`; 
+                                wv += `<rect x="${(bSize/2-w*2).toFixed(2)}" y="${(-h/2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="${color}" transform="translate(${tx},${ty}) rotate(${angle})" />`; 
+                            }
+                            wD += 2;
+                        }
+                    }
+                }
+                svgContent += `<g>${wv}</g>`;
+            }
+        });
+        const fullSVG = `<?xml version="1.0" encoding="UTF-8"?><svg width="700" height="933" viewBox="0 0 700 933" xmlns="http://www.w3.org/2000/svg" fill="none">${svgContent}</svg>`;
+        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([fullSVG], {type: 'image/svg+xml'})); link.download = `artwork_${Date.now()}.svg`; link.click();
+    }
+
+    function setMode(mode) { brushMode = mode; document.querySelectorAll('.btn-ui').forEach(btn => { btn.classList.toggle('active', btn.id === 'mode-' + mode); }); }
+    function clearCanvas() { paths = []; }
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
